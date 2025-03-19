@@ -11,14 +11,22 @@ terraform {
       version = "~> 3.6"
     }
   }
+  
 }
 
-# tflint-ignore: terraform_module_provider_declaration, terraform_output_separate, terraform_variable_separate
-provider "azurerm" {
-  features {
-    resource_group {
-      prevent_deletion_if_contains_resources = false
-    }
+locals {
+  #deployment_region = module.regions.regions[random_integer.region_index.result].name
+  deployment_region = "eastus" #temporarily pinning on single region
+  region = "eastus"
+  db_name = "app_mysql"
+  enviroment = "test"
+  additional_tags  = {
+    Owner = "Org_Name"
+    Expires = "Never"
+    Department = "Engineering"
+  }
+  tags = {
+    scenario = "Default"
   }
 }
 
@@ -32,14 +40,6 @@ module "regions" {
   version = "0.3.0"
 
   availability_zones_filter = true
-}
-
-locals {
-  #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region
-  tags = {
-    scenario = "Default"
-  }
 }
 
 resource "random_integer" "region_index" {
@@ -117,34 +117,19 @@ module "vnet" {
         id = module.natgateway.resource_id
       }
     }
+    vm_subnet_3 = {
+      name             = "${module.naming.subnet.name_unique}-3"
+      address_prefixes = ["10.0.3.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
     AzureBastionSubnet = {
       name             = "AzureBastionSubnet"
       address_prefixes = ["10.0.3.0/24"]
     }
   }
 }
-
-/* Uncomment this section if you would like to include a bastion resource with this example.
-resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-
-  ip_configuration {
-    name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
-    public_ip_address_id = azurerm_public_ip.bastionpip.id
-  }
-}
-*/
 
 data "azurerm_client_config" "current" {}
 
@@ -173,7 +158,7 @@ module "avm_res_keyvault_vault" {
   tags = local.tags
 }
 
-module "testvm" {
+module "frontend_vm" {
   #source = "../../"
   source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
@@ -192,8 +177,8 @@ module "testvm" {
 
   source_image_reference = {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
     version   = "latest"
   }
 
@@ -208,7 +193,48 @@ module "testvm" {
       }
     }
   }
+  tags = local.tags
 
+  depends_on = [
+    module.avm_res_keyvault_vault
+  ]
+}
+
+module "backend_vm" {
+  #source = "../../"
+  source = "Azure/avm-res-compute-virtualmachine/azurerm"
+  #version = "0.17.0
+
+  #enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Linux"
+  name                = module.naming.virtual_machine.name_unique
+  sku_size            = module.vm_sku.sku
+  zone                = random_integer.zone_index.result
+
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
+
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+    }
+  }
   tags = local.tags
 
   depends_on = [
