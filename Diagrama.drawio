@@ -1,0 +1,82 @@
+<mxfile host="Electron" modified="2025-03-19T22:26:15.350Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.1 Chrome/112.0.5615.87 Electron/24.1.2 Safari/537.36" etag="OF-bq9U_wydgIMk2vvV5" version="21.2.1" type="device">
+  <diagram name="Página-1" id="XeuIEK1tc-fwZtmeH2Qc">
+    <mxGraphModel dx="1434" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-7" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=12 12;fillColor=#dae8fc;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;strokeColor=#6c8ebf;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="210" y="50" width="489.5" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-20" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="254.5" y="80" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-12" value="Public subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B5D4FC;strokeColor=#5A7FBF;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-20">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-3" value="VM1 - Frontend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-20">
+          <mxGeometry x="25.5" y="10" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-21" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="394.5" y="80" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-17" value="Private subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-21">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-4" value="VM2 - Backend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-21">
+          <mxGeometry x="25.5" y="10" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-22" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="539.5" y="80" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-18" value="Private subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-22">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-2" value="prodDB" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/databases/Azure_Database_MySQL_Server.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-22">
+          <mxGeometry x="36" y="10" width="48" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-23" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="539.5" y="261" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-19" value="Private subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-23">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-8" value="qaDB" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/databases/Azure_Database_MySQL_Server.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-23">
+          <mxGeometry x="36" y="12" width="48" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-24" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="394.5" y="261" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-16" value="Private subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-24">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-10" value="VM4 - Backend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-24">
+          <mxGeometry x="25.5" y="12" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-25" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="254.5" y="261" width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-9" value="VM3 - Frontend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-25">
+          <mxGeometry x="25.5" y="12" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-31" value="" style="group" vertex="1" connectable="0" parent="k6D9nj8YEmuQGtsHTDcK-25">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-32" value="Public subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B5D4FC;strokeColor=#5A7FBF;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-31">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-33" value="VM3&amp;nbsp;- Frontend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-31">
+          <mxGeometry x="25.5" y="10" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-27" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="210" y="510" width="160.25" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-26" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=12 12;fillColor=#dae8fc;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;strokeColor=#6c8ebf;strokeWidth=2;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-27">
+          <mxGeometry width="160.25" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-11" value="blob - Terraform backend" style="image;sketch=0;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/mscae/BlobBlock.svg;labelBackgroundColor=none;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-27">
+          <mxGeometry x="50.370000000000005" y="10" width="59.52" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

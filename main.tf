@@ -19,11 +19,11 @@ locals {
   deployment_region = "eastus" #temporarily pinning on single region
   region = "eastus"
   db_name = "app_mysql"
-  enviroment = "test"
+  enviroment = "${terraform.workspace}"
   additional_tags  = {
-    Owner = "Org_Name"
+    Owner = "Org_Name_" + "${terraform.workspace}"
     Expires = "Never"
-    Department = "Engineering"
+    Department = "CloudOps"
   }
   tags = {
     scenario = "Default"
@@ -58,6 +58,7 @@ resource "azurerm_resource_group" "this_rg" {
   tags     = local.tags
 }
 
+# CHECK REQUIREMENTS FOR FREE TIER
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.3.0"
@@ -81,7 +82,7 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.2.1"
 
-  name                = module.naming.nat_gateway.name_unique
+  name                = local.enviroment + "_" + module.naming.nat_gateway.name_unique
   enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -98,66 +99,43 @@ module "vnet" {
   version = "=0.8.1"
 
   resource_group_name = azurerm_resource_group.this_rg.name
-  address_space       = ["10.0.0.0/16"]
-  name                = module.naming.virtual_network.name_unique
+  address_space       = [var.vnet_adress_space]
+  name                = module.naming.virtual_network.name_unique+"${terraform.workspace}"
   location            = azurerm_resource_group.this_rg.location
 
   subnets = {
     vm_subnet_1 = {
-      name             = "${module.naming.subnet.name_unique}-1"
-      address_prefixes = ["10.0.1.0/24"]
+      name             = "${module.naming.subnet.name_unique}-${terraform.workspace}-1"
+      address_prefixes = [var.vnet_subnet_prefixes_frontend]
       nat_gateway = {
         id = module.natgateway.resource_id
       }
     }
     vm_subnet_2 = {
-      name             = "${module.naming.subnet.name_unique}-2"
-      address_prefixes = ["10.0.2.0/24"]
+      name             = "${module.naming.subnet.name_unique}-${terraform.workspace}2"
+      address_prefixes = [var.vnet_subnet_prefixes_backend]
       nat_gateway = {
         id = module.natgateway.resource_id
       }
     }
     vm_subnet_3 = {
-      name             = "${module.naming.subnet.name_unique}-3"
-      address_prefixes = ["10.0.3.0/24"]
+      name             = "${module.naming.subnet.name_unique}-${terraform.workspace}3"
+      address_prefixes = [var.vnet_subnet_prefixes_mysqldb]
       nat_gateway = {
         id = module.natgateway.resource_id
       }
     }
     AzureBastionSubnet = {
-      name             = "AzureBastionSubnet"
-      address_prefixes = ["10.0.3.0/24"]
+      name             = "AzureBastionSubnet" + "${terraform.workspace}"
+      address_prefixes = ["10.0.4.0/24"]
     }
   }
 }
 
 data "azurerm_client_config" "current" {}
 
-module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "=0.9.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
-  network_acls = {
-    default_action = "Allow"
-  }
 
-  role_assignments = {
-    deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Secrets Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-  }
-
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
-
-  tags = local.tags
-}
-
+#TO BE CHANGED TO RESOURCES
 module "frontend_vm" {
   #source = "../../"
   source = "Azure/avm-res-compute-virtualmachine/azurerm"
@@ -167,7 +145,7 @@ module "frontend_vm" {
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   os_type             = "Linux"
-  name                = module.naming.virtual_machine.name_unique
+  name                = module.naming.virtual_machine.name_unique + "-frontend-${terraform.workspace}"
   sku_size            = module.vm_sku.sku
   zone                = random_integer.zone_index.result
 
@@ -209,13 +187,9 @@ module "backend_vm" {
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   os_type             = "Linux"
-  name                = module.naming.virtual_machine.name_unique
+  name                = module.naming.virtual_machine.name_unique + "-backend-${terraform.workspace}"
   sku_size            = module.vm_sku.sku
   zone                = random_integer.zone_index.result
-
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-  }
 
   source_image_reference = {
     publisher = "Canonical"
@@ -229,8 +203,8 @@ module "backend_vm" {
       name = module.naming.network_interface.name_unique
       ip_configurations = {
         ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig2"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
         }
       }
     }
