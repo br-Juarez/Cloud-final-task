@@ -17,7 +17,6 @@ terraform {
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "eastus" #temporarily pinning on single region
-  region = "eastus"
   db_name = "app_mysql"
   enviroment = "${terraform.workspace}"
   additional_tags  = {
@@ -26,7 +25,7 @@ locals {
     Department = "CloudOps"
   }
   tags = {
-    scenario = "Default"
+    scenario = "Cloud final task"
   }
 }
 
@@ -134,84 +133,10 @@ module "vnet" {
 
 data "azurerm_client_config" "current" {}
 
-
-#TO BE CHANGED TO RESOURCES
-module "frontend_vm" {
-  #source = "../../"
-  source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
-
-  #enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Linux"
-  name                = module.naming.virtual_machine.name_unique + "-frontend-${terraform.workspace}"
-  sku_size            = module.vm_sku.sku
-  zone                = random_integer.zone_index.result
-
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-  }
-
-  source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
-    version   = "latest"
-  }
-
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-    }
-  }
-  tags = local.tags
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
-}
-
-module "backend_vm" {
-  #source = "../../"
-  source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
-
-  #enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Linux"
-  name                = module.naming.virtual_machine.name_unique + "-backend-${terraform.workspace}"
-  sku_size            = module.vm_sku.sku
-  zone                = random_integer.zone_index.result
-
-  source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
-    version   = "latest"
-  }
-
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig2"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
-        }
-      }
-    }
-  }
-  tags = local.tags
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
+##CODE FOR FRONTEND VM
+##
+module "frontend_vm"{
+  source = "./vm_module"
+  network_interface_name = module.naming.network_interface.name_unique
+  
 }

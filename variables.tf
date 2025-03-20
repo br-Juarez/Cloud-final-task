@@ -1,3 +1,7 @@
+variable "enable_telemetry" {
+  type = bool
+}
+
 variable "frontend_vm_ip" {
     type = string
 }
