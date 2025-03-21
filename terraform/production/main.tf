@@ -28,7 +28,7 @@ locals {
   db_name           = "app_mysql"
   enviroment        = terraform.workspace
   additional_tags = {
-    Owner      = "Org_Name_" + "${terraform.workspace}"
+    Owner      = format("%s-%s", "Org_Name_", "${terraform.workspace}")
     Expires    = "Never"
     Department = "CloudOps"
   }
@@ -61,7 +61,7 @@ resource "random_integer" "zone_index" {
 
 resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
-  name     = module.naming.resource_group.name_unique + "-${terraform.workspace}"
+  name     = format("%s-%s", module.naming.resource_group.name_unique, local.enviroment)
   tags     = local.tags
 }
 
@@ -69,7 +69,7 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.2.0"
 
-  name                = local.enviroment + "_" + module.naming.nat_gateway.name_unique
+  name                = format("%s-%s", module.naming.nat_gateway.name_unique, local.enviroment)
   enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -88,12 +88,12 @@ module "vnet" {
 
   resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = [var.vnet_adress_space]
-  name                = module.naming.virtual_network.name_unique + "${terraform.workspace}"
+  name                = format("%s-%s", module.naming.virtual_network.name_unique, local.enviroment)
   location            = azurerm_resource_group.this_rg.location
 
   subnets = {
     vm_subnet_1 = {
-      name             = "${module.naming.subnet.name_unique}-${terraform.workspace}-1"
+      name             = "${module.naming.subnet.name_unique}-${local.enviroment}-1"
       address_prefixes = [var.vnet_subnet_CIDR_frontend]
       nat_gateway = {
         id = module.natgateway.resource_id
@@ -123,7 +123,7 @@ module "vnet" {
 #data "azurerm_client_config" "current" {}
 
 module "frontend_vm" {
-  source                 = "./vm_module"
+  source                 = "../vm_module"
   network_interface_name = module.naming.network_interface.name_unique
   location               = azurerm_resource_group.this_rg.location
   resource_group         = azurerm_resource_group.this_rg.name
@@ -141,7 +141,7 @@ module "frontend_vm" {
 }
 
 module "backend_vm" {
-  source                 = "./vm_module"
+  source                 = "../vm_module"
   network_interface_name = module.naming.network_interface.name_unique
   location               = azurerm_resource_group.this_rg.location
   resource_group         = azurerm_resource_group.this_rg.name
