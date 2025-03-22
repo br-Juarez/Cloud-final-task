@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2025-03-19T22:05:43.154Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.1 Chrome/112.0.5615.87 Electron/24.1.2 Safari/537.36" etag="piJrLswRJqVKEP4OZtBj" version="21.2.1" type="device">
+<mxfile host="Electron" modified="2025-03-19T22:26:15.350Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.1 Chrome/112.0.5615.87 Electron/24.1.2 Safari/537.36" etag="OF-bq9U_wydgIMk2vvV5" version="21.2.1" type="device">
   <diagram name="Página-1" id="XeuIEK1tc-fwZtmeH2Qc">
     <mxGraphModel dx="1434" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -55,11 +55,17 @@
         <mxCell id="k6D9nj8YEmuQGtsHTDcK-25" value="" style="group" vertex="1" connectable="0" parent="1">
           <mxGeometry x="254.5" y="261" width="120" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="k6D9nj8YEmuQGtsHTDcK-15" value="Private subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-25">
-          <mxGeometry width="120" height="140" as="geometry" />
-        </mxCell>
         <mxCell id="k6D9nj8YEmuQGtsHTDcK-9" value="VM3 - Frontend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-25">
           <mxGeometry x="25.5" y="12" width="69" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-31" value="" style="group" vertex="1" connectable="0" parent="k6D9nj8YEmuQGtsHTDcK-25">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-32" value="Public subnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B5D4FC;strokeColor=#5A7FBF;dashed=1;verticalAlign=bottom;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-31">
+          <mxGeometry width="120" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="k6D9nj8YEmuQGtsHTDcK-33" value="VM3&amp;nbsp;- Frontend" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/compute/Virtual_Machine.svg;labelBackgroundColor=none;fontFamily=Lucida Console;" vertex="1" parent="k6D9nj8YEmuQGtsHTDcK-31">
+          <mxGeometry x="25.5" y="10" width="69" height="64" as="geometry" />
         </mxCell>
         <mxCell id="k6D9nj8YEmuQGtsHTDcK-27" value="" style="group" vertex="1" connectable="0" parent="1">
           <mxGeometry x="210" y="510" width="160.25" height="90" as="geometry" />

@@ -40,3 +40,8 @@ Thumbs.db
 *.ps1
 *.bkp
 .terraform/
+.$Diagrama.drawio.bkp
+.$Diagrama.drawio.dtmp
+terraform.tfstate.d/
+powershell scripts/
+*.conf

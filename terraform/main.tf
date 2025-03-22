@@ -1,26 +1,4 @@
 #EPAM-IaC Terraform: Practical Task 1
-terraform {
-  required_version = "~> 1.6"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 3.22"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "3.7.1"
-    }
-    azapi = {
-      source  = "Azure/azapi"
-      version = "2.3.0"
-    }
-    modtm = {
-      source  = "Azure/modtm"
-      version = "0.3.5"
-    }
-  }
-
-}
 
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
@@ -122,8 +100,8 @@ module "vnet" {
 
 #data "azurerm_client_config" "current" {}
 
-module "frontend_vm" {
-  source                 = "../vm_module"
+module "main_frontend_vm" {
+  source                 = "./vm_module"
   network_interface_name = module.naming.network_interface.name_unique
   location               = azurerm_resource_group.this_rg.location
   resource_group         = azurerm_resource_group.this_rg.name
@@ -141,7 +119,7 @@ module "frontend_vm" {
 }
 
 module "backend_vm" {
-  source                 = "../vm_module"
+  source                 = "./vm_module"
   network_interface_name = module.naming.network_interface.name_unique
   location               = azurerm_resource_group.this_rg.location
   resource_group         = azurerm_resource_group.this_rg.name
@@ -162,8 +140,9 @@ module "mysql-azure" {
   source                   = "squareops/mysql-azure/azurerm"
   version                  = "1.0.0"
   name                     = "mysql-app-db"
-  environment              = terraform.workspace
+  environment              = lower(terraform.workspace)
   create_vnet              = "false"
+  resource_group_location = azurerm_resource_group.this_rg.location
   vnet_resource_group_name = azurerm_resource_group.this_rg.name
   vnet_name                = module.vnet.name        # If vnet creation is set to false, specify the vnet name here.
   vnet_id                  = module.vnet.resource_id # If vnet creation is set to false, specify the vnet id here.
@@ -173,9 +152,9 @@ module "mysql-azure" {
   mysql_version            = "8.0.21"
   zones                    = "2"
   storage_size_gb          = "128"
-  #sku_name                     = "GP_Standard_D4ds_v4"
+  sku_name                     = "Standard_D2ads_v5"
   backup_retention_days        = "30"
-  iops                         = "2000"
+  iops                         = "3000"
   auto_grow_enabled            = true # Auto scale storage
   geo_redundant_backup_enabled = true
   db_collation                 = "utf8_unicode_ci"
@@ -191,3 +170,25 @@ module "mysql-azure" {
   tags = local.tags
 }
 
+/*
+-------RESOURCES ADDED FOR PRODUCTION ONLY-------
+*/
+
+module "backup_frontend_vm" {
+  count = local.enviroment == "prod" ? 1 : 0
+  source                 = "./vm_module"
+  network_interface_name = module.naming.network_interface.name_unique
+  location               = azurerm_resource_group.this_rg.location
+  resource_group         = azurerm_resource_group.this_rg.name
+
+  subnet_id      = module.vnet.subnets.vm_subnet_1.resource_id
+  private_ip     = var.frontend_vm_ip
+  vm_name_prefix = module.naming.linux_virtual_machine.name_unique
+  vm_env         = terraform.workspace
+
+  #Credentials for vms and db passed trough env variabless
+  username = var.frontend_user
+  password = var.frontend_password
+
+  tags = local.tags
+}
