@@ -2,7 +2,11 @@ variable "enable_telemetry" {
   type = bool
 }
 
-variable "frontend_vm_ip" {
+variable "frontend_vm_ip_1" {
+  type = string
+}
+
+variable "frontend_vm_ip_2" {
   type = string
 }
 
@@ -22,7 +26,11 @@ variable "vnet_adress_space" {
   type = string
 }
 
-variable "vnet_subnet_CIDR_frontend" {
+variable "vnet_subnet_CIDR_frontend_1" {
+  type = string
+}
+
+variable "vnet_subnet_CIDR_frontend_2" {
   type = string
 }
 
@@ -31,6 +39,10 @@ variable "vnet_subnet_CIDR_backend" {
 }
 
 variable "vnet_subnet_CIDR_mysqldb" {
+  type = string
+}
+
+variable "vnet_subnet_CIDR_bastion" {
   type = string
 }
 
