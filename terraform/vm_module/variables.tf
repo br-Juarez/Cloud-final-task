@@ -1,20 +1,8 @@
-variable "network_interface_name" {
-  type = string
-}
-
 variable "location" {
   type = string
 }
 
 variable "resource_group" {
-  type = string
-}
-
-variable "subnet_id" {
-  type = string
-}
-
-variable "private_ip" {
   type = string
 }
 
@@ -30,10 +18,14 @@ variable "username" {
   type = string
 }
 
-variable "password" {
+variable "ssh_path" {
   type = string
 }
 
 variable "tags"{
   type = map(string)
+}
+
+variable "vm_nic"{
+  type = string
 }

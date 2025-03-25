@@ -2,7 +2,7 @@
 #Linux edit
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "eastus" #temporarily pinning on single region
+  deployment_region = "centralus" #temporarily pinning on single region
   db_name           = "app_mysql"
   enviroment        = terraform.workspace
   additional_tags = {
@@ -13,6 +13,7 @@ locals {
   tags = {
     scenario = "Cloud final task"
   }
+  ipconfig_names = ["main-vm-ipconfig", "backup-vm-ipconfig"]
 }
 
 module "naming" {
@@ -74,9 +75,9 @@ module "vnet" {
         id = module.natgateway.resource_id
       }
     }
-    db_subnet= {
-      name = "${module.naming.subnet.name_unique}-db-${terraform.workspace}"
-      address_prefixes = [var.vnet_subnet_CIDR_mysqldb]
+    db_subnet = {
+      name              = "${module.naming.subnet.name_unique}-db-${terraform.workspace}"
+      address_prefixes  = [var.vnet_subnet_CIDR_mysqldb]
       service_endpoints = ["Microsoft.storage"]
       delegation = [{
         name = "fs"
@@ -99,10 +100,74 @@ module "vnet" {
   tags = local.tags
 }
 
+
+module "natgateway" {
+  source  = "Azure/avm-res-network-natgateway/azurerm"
+  version = "0.2.0"
+
+  name                = format("NatGateway-%s-%s", module.naming.nat_gateway.name_unique, local.enviroment)
+  enable_telemetry    = true
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
+}
+
+##NETWORK INTERFACES FOR VMS##
+resource "azurerm_network_interface" "vm_main_nic" {
+  name                = "vm-main-nic"
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                          = local.ipconfig_names[0]
+    subnet_id                     = module.vnet.subnets.vm_subnet_1.resource_id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = var.frontend_vm_ip_1
+    primary                       = true
+  }
+}
+
+resource "azurerm_network_interface" "vm_backup_nic" {
+  name                = "vm-backup-nic"
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                          = local.ipconfig_names[1]
+    subnet_id                     = module.vnet.subnets.vm_subnet_2.resource_id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = var.frontend_vm_ip_2
+    primary                       = true
+  }
+}
+
+resource "azurerm_network_interface" "vm_backend_nic" {
+  name                = "vm-backend-nic"
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                          = "backend-vm-ipconfig"
+    subnet_id                     = module.vnet.subnets.vm_subnet_3.resource_id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = var.backend_vm_ip
+    primary                       = true
+  }
+}
+
+resource "azurerm_availability_set" "avset" {
+  name = "app-avset"
+  location = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  platform_fault_domain_count = 2
+  platform_update_domain_count = 2
+  managed = true
+}
+
 ##NETWORK SECURITY GROUP##
 ##########################
 # Create Network Security Group and rules
-resource "azurerm_network_security_group" "my_nsg" {
+resource "azurerm_network_security_group" "appserver" {
   name                = "network_security_group_${local.enviroment}"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -130,52 +195,56 @@ resource "azurerm_network_security_group" "my_nsg" {
     source_address_prefix        = "*"
     destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2]
   }
+  security_rule {
+    access                     = "Allow"
+    direction                  = "Inbound"
+    name                       = "tls"
+    priority                   = 100
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    source_address_prefix      = "*"
+    destination_port_range     = "443"
+    destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2]
+  }
 }
-
+## ASSOCIATE NSG TO SUBNET ##
 resource "azurerm_subnet_network_security_group_association" "nsg_association_subnet_1" {
   subnet_id                 = module.vnet.subnets.vm_subnet_1.resource_id
-  network_security_group_id = azurerm_network_security_group.my_nsg.id
+  network_security_group_id = azurerm_network_security_group.appserver.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsg_association_subnet_2" {
   subnet_id                 = module.vnet.subnets.vm_subnet_2.resource_id
-  network_security_group_id = azurerm_network_security_group.my_nsg.id
+  network_security_group_id = azurerm_network_security_group.appserver.id
 }
 
 ##PUBLIC IPS##
 ##############
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
+  name                = "bastion-pip"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
 }
 
 resource "azurerm_public_ip" "natgatewaypip" {
-  name                = module.naming.public_ip.name_unique
+  name                = "natgateway-pip"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+}
+
+resource "azurerm_public_ip" "balancerpip" {
+  name = "loadbalancer-pip"
+  resource_group_name = azurerm_resource_group.this_rg.name
+  location = azurerm_resource_group.this_rg.location
+  allocation_method = "Dynamic"
 }
 
 data "azurerm_public_ip" "bastionpip" {
   name                = azurerm_public_ip.bastionpip.name
   resource_group_name = azurerm_resource_group.this_rg.name
 }
-
-module "natgateway" {
-  source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.0"
-
-  name                = format("%s-%s", module.naming.nat_gateway.name_unique, local.enviroment)
-  enable_telemetry    = true
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
 
 resource "azurerm_bastion_host" "bastion" {
   name                = module.naming.bastion_host.name_unique
@@ -209,72 +278,80 @@ resource "azurerm_subnet_nat_gateway_association" "nat_gateway_subnet_associatio
 }
 */
 
-## Associate Network Interfaces to the Backend Pool of the Load Balancer ##
-###########################################################################
-resource "azurerm_network_interface_backend_address_pool_association" "main_nic_lb_pool" {
-  network_interface_id    = module.main_frontend_vm1.network_interface_id
-  ip_configuration_name   = "ipconfig-main-vm"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.app_lb_pool.id
-}
-
-resource "azurerm_network_interface_backend_address_pool_association" "backup_nic_lb_pool" {
-  network_interface_id    = module.backup_frontend_vm2.network_interface_id
-  ip_configuration_name   = "ipconfig-main-backup"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.app_lb_pool.id
-}
-
 data "azurerm_client_config" "current" {}
 
-module "main_frontend_vm1" {
-  source                 = "./vm_module"
-  network_interface_name = module.naming.network_interface.name_unique
-  location               = azurerm_resource_group.this_rg.location
-  resource_group         = azurerm_resource_group.this_rg.name
+### LOAD BALANCER ###
+#####################
+resource "azurerm_lb" "appserver_lb" {
+  name                = "appserver-lb"
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
 
-  subnet_id      = module.vnet.subnets.vm_subnet_1.resource_id
-  private_ip     = var.frontend_vm_ip_1
-  vm_name_prefix = module.naming.linux_virtual_machine.name_unique
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = azurerm_public_ip.balancerpip.id
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "lb-backend_address_pool" {
+  loadbalancer_id     = azurerm_lb.appserver_lb.id
+  name                = "BackEndAddressPool"
+}
+
+resource "azurerm_lb_nat_rule" "lb-" {
+  resource_group_name            = azurerm_resource_group.this_rg.name
+  loadbalancer_id                = azurerm_lb.appserver_lb.id
+  name                           = "HTTPSAccess"
+  protocol                       = "Tcp"
+  frontend_port                  = 443
+  backend_port                   = 443
+  frontend_ip_configuration_name = azurerm_lb.appserver_lb.frontend_ip_configuration[0].name
+}
+
+module "main_frontend_vm1" {
+  source         = "./vm_module"
+  location       = azurerm_resource_group.this_rg.location
+  resource_group = azurerm_resource_group.this_rg.name
+
+  vm_name_prefix = format("%s-%s", module.naming.linux_virtual_machine.name_unique, "main")
   vm_env         = terraform.workspace
+  vm_nic         = azurerm_network_interface.vm_main_nic.id
 
   #Credentials for vms and db passed trough env variabless
   username = var.frontend_user
-  password = var.frontend_password
+  ssh_path = "./vm_main.pub"
 
   tags = local.tags
 }
 
 module "backup_frontend_vm2" {
-  source                 = "./vm_module"
-  network_interface_name = module.naming.network_interface.name_unique
-  location               = azurerm_resource_group.this_rg.location
-  resource_group         = azurerm_resource_group.this_rg.name
+  source         = "./vm_module"
+  location       = azurerm_resource_group.this_rg.location
+  resource_group = azurerm_resource_group.this_rg.name
 
-  subnet_id      = module.vnet.subnets.vm_subnet_1.resource_id
-  private_ip     = var.frontend_vm_ip_2
-  vm_name_prefix = module.naming.linux_virtual_machine.name_unique
+  vm_name_prefix = format("%s-%s", module.naming.linux_virtual_machine.name_unique, "backup")
   vm_env         = terraform.workspace
+  vm_nic         = azurerm_network_interface.vm_backup_nic.id
 
   #Credentials for vms and db passed trough env variabless
   username = var.frontend_user
-  password = var.frontend_password
+  ssh_path = "./vm_backup.pub"
 
   tags = local.tags
 }
 
 module "backend_vm" {
-  source                 = "./vm_module"
-  network_interface_name = module.naming.network_interface.name_unique
-  location               = azurerm_resource_group.this_rg.location
-  resource_group         = azurerm_resource_group.this_rg.name
+  source         = "./vm_module"
+  location       = azurerm_resource_group.this_rg.location
+  resource_group = azurerm_resource_group.this_rg.name
 
-  subnet_id      = module.vnet.subnets.vm_subnet_2.resource_id
-  private_ip     = var.backend_vm_ip
-  vm_name_prefix = module.naming.linux_virtual_machine.name_unique
+  vm_name_prefix = format("%s-%s", module.naming.linux_virtual_machine.name_unique, "backend")
   vm_env         = terraform.workspace
+  vm_nic         = azurerm_network_interface.vm_backend_nic.id
 
   #Credentials for vms and db passed trough env variabless
   username = var.backend_user
-  password = var.backend_password
+  ssh_path = "./vm_backend.pub"
 
   tags = local.tags
 }
@@ -298,49 +375,4 @@ resource "azurerm_mysql_flexible_database" "example" {
   server_name         = azurerm_mysql_flexible_server.mysql_fs.name
   charset             = "utf8"
   collation           = "utf8_unicode_ci"
-}
-
-###LOAD BALANCER###
-# Create an Internal Load Balancer
-resource "azurerm_lb" "app_lb" {
-  name                = "app_lb_${local.enviroment}"
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                          = "frontend-ip-main"
-    subnet_id                     = module.vnet.subnets.vm_subnet_1.resource_id
-    private_ip_address_allocation = "Dynamic"
-  }
-  frontend_ip_configuration {
-    name                          = "frontend-ip-backup"
-    subnet_id                     = module.vnet.subnets.vm_subnet_2.resource_id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-resource "azurerm_lb_backend_address_pool" "app_lb_pool" {
-  loadbalancer_id = azurerm_lb.app_lb.id
-  name            = "test-pool"
-}
-
-resource "azurerm_lb_probe" "app_lb_probe" {
-  #resource_group_name = azurerm_resource_group.this_rg.name
-  loadbalancer_id = azurerm_lb.app_lb.id
-  name            = "test-probe"
-  port            = 80
-}
-
-resource "azurerm_lb_rule" "app_lb_rule" {
-  #resource_group_name = azurerm_resource_group.this_rg.name
-  loadbalancer_id                = azurerm_lb.app_lb.id
-  name                           = "test-rule"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = 80
-  disable_outbound_snat          = true
-  frontend_ip_configuration_name = "frontend-ip"
-  probe_id                       = azurerm_lb_probe.app_lb_probe.id
-  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.app_lb_pool.id]
 }

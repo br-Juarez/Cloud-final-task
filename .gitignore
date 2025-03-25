@@ -46,3 +46,4 @@ terraform.tfstate.d/
 powershell scripts/
 *.conf
 *.sh
+*.pub
