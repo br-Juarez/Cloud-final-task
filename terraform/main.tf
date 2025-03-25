@@ -1,5 +1,5 @@
 #EPAM-IaC Terraform: Practical Task 1
-
+#Linux edit
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "eastus" #temporarily pinning on single region
