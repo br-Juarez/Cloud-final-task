@@ -11,5 +11,5 @@ output "vm_private_ip" {
 }
 
 output "vm_public_ip"{
-  value = azurerm_linux_virtualmachine.main.public_ip_address
+  value = azurerm_linux_virtual_machine.main.public_ip_address
 }
