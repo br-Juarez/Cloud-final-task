@@ -1,3 +1,6 @@
 {
-    "ansible.python.interpreterPath": "c:\\Python313\\python.exe"
+    "ansible.python.interpreterPath": "c:\\Python313\\python.exe",
+    "terminal.integrated.env.linux": {
+        "qa_env_credentials.sh"
+    }
 }
