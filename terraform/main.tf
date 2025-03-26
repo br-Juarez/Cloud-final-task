@@ -224,21 +224,24 @@ resource "azurerm_public_ip" "bastionpip" {
   name                = "bastion-pip"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku = "Standard"
 }
 
 resource "azurerm_public_ip" "natgatewaypip" {
   name                = "natgateway-pip"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku = "Standard"
 }
 
 resource "azurerm_public_ip" "balancerpip" {
   name = "loadbalancer-pip"
   resource_group_name = azurerm_resource_group.this_rg.name
   location = azurerm_resource_group.this_rg.location
-  allocation_method = "Dynamic"
+  allocation_method = "Static"
+  sku = "Standard"
 }
 
 data "azurerm_public_ip" "bastionpip" {
@@ -286,6 +289,7 @@ resource "azurerm_lb" "appserver_lb" {
   name                = "appserver-lb"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
+  sku = "Standard"
 
   frontend_ip_configuration {
     name                 = "PublicIPAddress"
@@ -367,6 +371,7 @@ resource "azurerm_mysql_flexible_server" "mysql_fs" {
   backup_retention_days  = 7
   delegated_subnet_id    = module.vnet.subnets.db_subnet.resource_id
   sku_name               = "B_Standard_B1s"
+  zone = "1"
 }
 
 resource "azurerm_mysql_flexible_database" "example" {
