@@ -279,7 +279,7 @@ data "azurerm_client_config" "current" {}
 ## LOAD BALANCER ##
 module "avm-res-network-loadbalancer" {
   source = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.4.0"
+  version = "0.3.2"
 
   enable_telemetry = var.enable_telemetry
 
@@ -293,40 +293,19 @@ module "avm-res-network-loadbalancer" {
       name = "lb-frontend"
       # Creates Public IP Address
       create_public_ip_address        = true
-      public_ip_address_resource_name = module.naming.public_ip.name_unique
+      public_ip_address_resource_name = format("%s-%s",module.naming.public_ip.name_unique, local.enviroment)
       # zones = ["1", "2", "3"] # Zone-redundant
       # zones = ["None"] # Non-zonal
     }
   }
 
-  /*
   # Virtual Network for Backend Address Pool(s)
-  backend_address_pool_configuration = azurerm_virtual_network.example.id
-
+  backend_address_pool_configuration = module.vnet.resource_id
   # Backend Address Pool(s)
   backend_address_pools = {
     pool1 = {
       name                        = "primaryPool"
-      virtual_network_resource_id = azurerm_virtual_network.example.id # set a virtual_network_resource_id if using backend_address_pool_addresses
-    }
-    pool2 = {
-      name = "secondaryPool"
-
-    }
-  }
-
-  backend_address_pool_addresses = {
-    address1 = {
-      name                             = "${azurerm_network_interface.example_1.name}-ipconfig1" # must be unique if multiple addresses are used
-      backend_address_pool_object_name = "pool1"
-      ip_address                       = azurerm_network_interface.example_1.private_ip_address
-      virtual_network_resource_id      = azurerm_virtual_network.example.id
-    }
-    address2 = {
-      name                             = "${azurerm_network_interface.example_2.name}-ipconfig1" # must be unique if multiple addresses are used
-      backend_address_pool_object_name = "pool1"
-      ip_address                       = azurerm_network_interface.example_2.private_ip_address
-      virtual_network_resource_id      = azurerm_virtual_network.example.id
+      virtual_network_resource_id = module.vnet.resource_id # set a virtual_network_resource_id if using backend_address_pool_addresses
     }
   }
 
@@ -342,7 +321,7 @@ module "avm-res-network-loadbalancer" {
   lb_rules = {
     http1 = {
       name                           = "myHTTPRule"
-      frontend_ip_configuration_name = "myFrontend"
+      frontend_ip_configuration_name = "lb-frontend"
 
       backend_address_pool_object_names = ["pool1"]
       protocol                          = "Tcp"
@@ -354,9 +333,7 @@ module "avm-res-network-loadbalancer" {
       idle_timeout_in_minutes = 15
       enable_tcp_reset        = true
     }
-  }
-  */
-
+  } 
 }
 
 # output "azurerm_lb" {
