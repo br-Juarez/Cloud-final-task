@@ -99,7 +99,21 @@ module "vnet" {
   }
   tags = local.tags
 }
-
+/*
+module "route-table" {
+  source = "aztfm/route-table/azurerm"
+  version = "2.0.0"
+  
+  name = "app-rout-table-${local.enviroment}"
+  resource_group_name = azurerm_resource_group.this_rg.name
+  location = azurerm_resource_group.this_rg.location
+  route {
+    name = "ejemplo"
+    address_prefix = var.vnet_subnet_CIDR_frontend_1
+    next_hop_type = ""
+  }
+}
+*/
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
@@ -193,7 +207,7 @@ resource "azurerm_network_security_group" "appserver" {
     source_port_range            = "*"
     destination_port_range       = "80"
     source_address_prefix        = "*"
-    destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2]
+    destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2, var.vnet_subnet_CIDR_backend]
   }
   security_rule {
     access                     = "Allow"
@@ -204,7 +218,7 @@ resource "azurerm_network_security_group" "appserver" {
     source_port_range          = "*"
     source_address_prefix      = "*"
     destination_port_range     = "443"
-    destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2]
+    destination_address_prefixes = [var.vnet_subnet_CIDR_frontend_1, var.vnet_subnet_CIDR_frontend_2, var.vnet_subnet_CIDR_backend]
   }
 }
 ## ASSOCIATE NSG TO SUBNET ##
@@ -236,14 +250,6 @@ resource "azurerm_public_ip" "natgatewaypip" {
   sku = "Standard"
 }
 
-resource "azurerm_public_ip" "balancerpip" {
-  name = "loadbalancer-pip"
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location = azurerm_resource_group.this_rg.location
-  allocation_method = "Static"
-  sku = "Standard"
-}
-
 data "azurerm_public_ip" "bastionpip" {
   name                = azurerm_public_ip.bastionpip.name
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -267,51 +273,103 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_gateway_ip_association
   nat_gateway_id       = module.natgateway.resource_id
   public_ip_address_id = azurerm_public_ip.natgatewaypip.id
 }
-/*
-## Associate the NAT Gateway to subnets ##
-##########################################
-resource "azurerm_subnet_nat_gateway_association" "nat_gateway_subnet_association_1" {
-  subnet_id = module.vnet.subnets.vm_subnet_1.id
-  nat_gateway_id = module.natgateway.resource_id
-}
-
-resource "azurerm_subnet_nat_gateway_association" "nat_gateway_subnet_association_2" {
-  subnet_id = module.vnet.subnets.vm_subnet_2.id
-  nat_gateway_id = module.natgateway.resource_id
-}
-*/
 
 data "azurerm_client_config" "current" {}
 
-### LOAD BALANCER ###
-#####################
-resource "azurerm_lb" "appserver_lb" {
-  name                = "appserver-lb"
+## LOAD BALANCER ##
+module "avm-res-network-loadbalancer" {
+  source = "Azure/avm-res-network-loadbalancer/azurerm"
+  version = "0.4.0"
+
+  enable_telemetry = var.enable_telemetry
+
+  name                = "public-lb"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  sku = "Standard"
 
-  frontend_ip_configuration {
-    name                 = "PublicIPAddress"
-    public_ip_address_id = azurerm_public_ip.balancerpip.id
+  # Frontend IP Configuration
+  frontend_ip_configurations = {
+    frontend_configuration_1 = {
+      name = "lb-frontend"
+      # Creates Public IP Address
+      create_public_ip_address        = true
+      public_ip_address_resource_name = module.naming.public_ip.name_unique
+      # zones = ["1", "2", "3"] # Zone-redundant
+      # zones = ["None"] # Non-zonal
+    }
   }
+
+  /*
+  # Virtual Network for Backend Address Pool(s)
+  backend_address_pool_configuration = azurerm_virtual_network.example.id
+
+  # Backend Address Pool(s)
+  backend_address_pools = {
+    pool1 = {
+      name                        = "primaryPool"
+      virtual_network_resource_id = azurerm_virtual_network.example.id # set a virtual_network_resource_id if using backend_address_pool_addresses
+    }
+    pool2 = {
+      name = "secondaryPool"
+
+    }
+  }
+
+  backend_address_pool_addresses = {
+    address1 = {
+      name                             = "${azurerm_network_interface.example_1.name}-ipconfig1" # must be unique if multiple addresses are used
+      backend_address_pool_object_name = "pool1"
+      ip_address                       = azurerm_network_interface.example_1.private_ip_address
+      virtual_network_resource_id      = azurerm_virtual_network.example.id
+    }
+    address2 = {
+      name                             = "${azurerm_network_interface.example_2.name}-ipconfig1" # must be unique if multiple addresses are used
+      backend_address_pool_object_name = "pool1"
+      ip_address                       = azurerm_network_interface.example_2.private_ip_address
+      virtual_network_resource_id      = azurerm_virtual_network.example.id
+    }
+  }
+
+  # Health Probe(s)
+  lb_probes = {
+    tcp1 = {
+      name     = "myHealthProbe"
+      protocol = "Tcp"
+    }
+  }
+
+  # Load Balaner rule(s)
+  lb_rules = {
+    http1 = {
+      name                           = "myHTTPRule"
+      frontend_ip_configuration_name = "myFrontend"
+
+      backend_address_pool_object_names = ["pool1"]
+      protocol                          = "Tcp"
+      frontend_port                     = 80
+      backend_port                      = 80
+
+      probe_object_name = "tcp1"
+
+      idle_timeout_in_minutes = 15
+      enable_tcp_reset        = true
+    }
+  }
+  */
+
 }
 
-resource "azurerm_lb_backend_address_pool" "lb-backend_address_pool" {
-  loadbalancer_id     = azurerm_lb.appserver_lb.id
-  name                = "BackEndAddressPool"
-}
+# output "azurerm_lb" {
+#   value       = module.loadbalancer.azurerm_lb
+#   description = "Outputs the entire Azure Load Balancer resource"
+# }
 
-resource "azurerm_lb_nat_rule" "lb-" {
-  resource_group_name            = azurerm_resource_group.this_rg.name
-  loadbalancer_id                = azurerm_lb.appserver_lb.id
-  name                           = "HTTPSAccess"
-  protocol                       = "Tcp"
-  frontend_port                  = 443
-  backend_port                   = 443
-  frontend_ip_configuration_name = azurerm_lb.appserver_lb.frontend_ip_configuration[0].name
-}
+# output "azurerm_public_ip" {
+#   value       = module.loadbalancer.azurerm_public_ip
+#   description = "Outputs each Public IP Address resource in it's entirety"
+# }
 
+### VMS ###
 module "main_frontend_vm1" {
   source         = "./vm_module"
   location       = azurerm_resource_group.this_rg.location
